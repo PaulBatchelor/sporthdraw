@@ -1,0 +1,45 @@
+#!/bin/sh
+
+sp2png() {
+    local SPFILE=$1
+    local PNGFILE=$2
+    local SR=$3
+    # change the size of the output png
+    local size=500
+    # how many frames are written
+    local NFRAMES=1
+
+    local len=$(echo "(($size * $size * 3) / 4) * $NFRAMES" | bc)
+    sporth -r $SR -b raw -c 1 -d $len $SPFILE | convert -quality 90 -size $size"x"$size -depth 8 rgb:- $PNGFILE
+}
+
+png2wav() {
+    local PNGFILE=$1
+    local WAVFILE=$2
+    local SR=$3
+    convert $PNGFILE rgb:- | sox -t raw -r $SR -c 1 -L -e floating-point -b 32 - $WAVFILE
+}
+
+if [ "$#" -lt 3 ]
+then
+    echo "Usage: sporthdraw [sp2png|png2wav] in out"
+    exit 1
+fi
+
+MODE=$1
+IN=$2
+OUT=$3
+SR=44100
+
+if [ $MODE = "sp2png" ]
+then
+    echo "Writing to png file $OUT"
+    sp2png $IN $OUT $SR
+elif [ $MODE = "png2wav" ]
+then
+    echo "Writing to WAV file $OUT..."
+    png2wav $IN $OUT $SR
+else
+    echo "Could not find mode $MODE"
+    exit 1
+fi
